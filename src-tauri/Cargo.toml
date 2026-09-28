@@ -1,0 +1,17 @@
+[package]
+name = "audiolink-ensayo-pilot"
+version = "0.1.0"
+description = "Piloto standalone de AudioLink Ensayo (Tauri)"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "audiolink-ensayo-pilot"
+path = "src/main.rs"
