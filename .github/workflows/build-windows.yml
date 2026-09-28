@@ -1,0 +1,50 @@
+name: Compilar AudioLink Ensayo (.exe)
+
+# Se dispara a mano desde la pestaña "Actions" de GitHub — sin tocar
+# ningún archivo del repositorio. Pide la URL de tu sitio (GitHub Pages)
+# como un campo
+# de texto y la mete en tauri.conf.json recién en el momento de
+# compilar (el archivo del repositorio queda intacto).
+on:
+  workflow_dispatch:
+    inputs:
+      url_ensayo:
+        description: "URL completa de ensayo.html en tu sitio (ej: https://audiolink-marto.github.io/AUDIOLINK/ensayo.html)"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Bajar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cachear las dependencias de Rust (compilaciones futuras más rápidas)
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Poner la URL real en tauri.conf.json (solo en esta compilación, no se guarda en el repo)
+        shell: pwsh
+        run: |
+          $ruta = "src-tauri/tauri.conf.json"
+          $json = Get-Content $ruta -Raw | ConvertFrom-Json
+          $json.app.windows[0].url = "${{ inputs.url_ensayo }}"
+          $json | ConvertTo-Json -Depth 20 | Set-Content $ruta
+
+      - name: Instalar la interfaz de Tauri (cargo, sin Node)
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Compilar el instalador de Windows
+        working-directory: src-tauri
+        run: cargo tauri build
+
+      - name: Publicar el .exe para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioLink-Ensayo-instalador-windows
+          path: src-tauri/target/release/bundle/nsis/*.exe
